@@ -8,6 +8,7 @@ import { formaterMontant, estEnRetard } from '../../utils/invoiceUtils';
 import InvoiceForm from './InvoiceForm';
 import InvoicePreview from './InvoicePreview';
 import { exporterFacturePDF } from './InvoicePdfExporter';
+import { API_BASE_URL } from '../../config';
 import dayjs from 'dayjs';
 
 const InvoiceList: React.FC = () => {
@@ -48,7 +49,7 @@ const InvoiceList: React.FC = () => {
       try {
         message.loading({ content: 'Envoi de l\'email en cours...', key: 'email' });
 
-        const response = await fetch(`http://localhost:3001/api/factures/${factureId}/send-email`, {
+        const response = await fetch(`${API_BASE_URL}/factures/${factureId}/send-email`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -23,6 +23,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import 'dayjs/locale/fr';
+import { API_BASE_URL } from '../config';
 
 dayjs.locale('fr');
 
@@ -57,7 +58,7 @@ const SaisieCRAPage: React.FC = () => {
   const validateToken = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/cra-token/${token}`);
+      const response = await fetch(`${API_BASE_URL}/cra-token/${token}`);
       const data = await response.json();
 
       if (response.ok && data.valide) {
@@ -81,7 +82,7 @@ const SaisieCRAPage: React.FC = () => {
       setSubmitting(true);
       setError(null);
 
-      const response = await fetch('http://localhost:3001/api/cra-saisie', {
+      const response = await fetch(`${API_BASE_URL}/cra-saisie`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

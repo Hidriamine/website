@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Client, Salarie, Facture, Entreprise, DataContextType, Statistiques } from '../types';
 import { getSalariesSansFactureDuMois } from '../utils/invoiceUtils';
+import { API_BASE_URL } from '../config';
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
@@ -15,8 +16,6 @@ export const useData = (): DataContextType => {
 interface DataProviderProps {
   children: ReactNode;
 }
-
-const API_BASE_URL = 'http://localhost:3001/api';
 
 export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const [entreprise, setEntreprise] = useState<Entreprise | null>(null);
