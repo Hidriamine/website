@@ -30,7 +30,7 @@ define('CRA_TOKEN_EXPIRATION_DAYS', 10);
 define('CRA_TOKEN_CLEANUP_DAYS', 30);
 
 // ============ URLS ============
-define('BASE_URL', 'http://ss1083854234.onlinehome.fr');
+define('BASE_URL', 'http://s1083854234.onlinehome.fr');
 
 // Charger la configuration locale si elle existe (contient les mots de passe)
 $localConfig = __DIR__ . '/config.local.php';

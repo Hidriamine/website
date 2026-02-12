@@ -19,6 +19,9 @@ api/config.local.php
 # Docker & SSL
 certbot/
 
+# Deployment output
+deploy/
+
 # Backups
 backups/
 
