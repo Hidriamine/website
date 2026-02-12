@@ -155,14 +155,14 @@ Dans `services/notificationService.js`, décommentez et configurez la section Tw
 
 ```javascript
 // Décommenter cette section :
-const twilio = require('twilio');
+/*const twilio = require('twilio');
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
 const result = await client.messages.create({
   body: message,
   from: process.env.TWILIO_PHONE_NUMBER,
   to: salarie.telephone
-});
+});*/
 ```
 
 #### Activer les SMS dans le cron job
