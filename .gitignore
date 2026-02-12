@@ -28,3 +28,4 @@ certbot/
 *.njsproj
 *.sln
 *.sw?
+.env
