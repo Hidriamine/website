@@ -1,0 +1,75 @@
+name: Deploy to IONOS Web Hosting
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy via FTP
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+        env:
+          VITE_API_URL: /api
+
+      - name: Prepare deployment directory
+        run: |
+          mkdir -p deploy
+
+          # Copier le build frontend (contenu de dist/)
+          cp -r dist/* deploy/
+
+          # Copier le .htaccess principal (depuis public/)
+          cp public/.htaccess deploy/.htaccess
+
+          # Copier l'API PHP
+          cp -r api deploy/api
+
+          # Copier les fichiers de données
+          cp -r data deploy/data
+
+          # Générer la configuration locale PHP à partir des secrets
+          cat > deploy/api/config.local.php << 'PHPEOF'
+          <?php
+          // Configuration générée automatiquement par le déploiement
+          PHPEOF
+
+          # Lister les fichiers pour vérification
+          echo "=== Contenu du dossier de déploiement ==="
+          find deploy -type f | head -50
+
+      - name: Generate PHP config from secrets
+        run: |
+          cat > deploy/api/config.local.php << PHPEOF
+          <?php
+          // Configuration générée par GitHub Actions - NE PAS MODIFIER MANUELLEMENT
+          define('SMTP_PASS', '${{ secrets.SMTP_PASS }}');
+          PHPEOF
+
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.IONOS_FTP_HOST }}
+          username: ${{ secrets.IONOS_FTP_USER }}
+          password: ${{ secrets.IONOS_FTP_PASS }}
+          local-dir: ./deploy/
+          server-dir: /
+          dangerous-clean-slate: false

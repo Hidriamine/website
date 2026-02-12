@@ -13,7 +13,8 @@ dist-ssr
 *.local
 
 # Environment variables
-#.env
+.env
+api/config.local.php
 
 # Docker & SSL
 certbot/

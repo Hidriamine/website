@@ -1,0 +1,8 @@
+<?php
+/**
+ * Configuration locale - NE PAS COMMITER
+ * Copier ce fichier en config.local.php et remplir les valeurs
+ */
+
+// Mot de passe SMTP
+define('SMTP_PASS', 'votre-mot-de-passe-smtp');
