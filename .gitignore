@@ -18,6 +18,9 @@ dist-ssr
 # Docker & SSL
 certbot/
 
+# Backups
+backups/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
