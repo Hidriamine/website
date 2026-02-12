@@ -2,6 +2,7 @@ import pdfMake from 'pdfmake/build/pdfmake.js';
 import pdfFonts from 'pdfmake/build/vfs_fonts.js';
 import dayjs from 'dayjs';
 import 'dayjs/locale/fr.js';
+import { penalites } from '../config/index.js';
 
 // Configuration des fonts et locale
 pdfMake.vfs = pdfFonts;
@@ -183,7 +184,7 @@ export const genererFacturePDF = (facture, client, entreprise) => {
                 text: [
                   { text: 'Conditions de paiement : ', bold: true },
                   { text: `Paiement a ${client.delaiFacturation} jours\n` },
-                  { text: 'En cas de retard de paiement, une penalite de 3 fois le taux d\'interet legal sera appliquee, ainsi qu\'une indemnite forfaitaire pour frais de recouvrement de 40 euros.\n\n' },
+                  { text: `En cas de retard de paiement, une penalite de ${penalites.tauxInteretLegal} fois le taux d'interet legal sera appliquee, ainsi qu'une indemnite forfaitaire pour frais de recouvrement de ${penalites.indemniteRecouvrement} euros.\n\n` },
                   { text: 'Le reglement sera realise en Euros par virement bancaire ou par cheque. Membre d\'un centre de gestion agree, le reglement par cheque est accepte' },
                 ],
                 style: 'footer',

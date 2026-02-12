@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { craToken as craTokenConfig } from '../config/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -73,7 +74,7 @@ export async function creerTokenCRA(salarie, mois) {
     // Créer un nouveau token
     const token = genererTokenUnique();
     const dateCreation = dayjs().toISOString();
-    const dateExpiration = dayjs().add(10, 'day').toISOString();
+    const dateExpiration = dayjs().add(craTokenConfig.expirationDays, 'day').toISOString();
 
     const nouveauToken = {
       token,
@@ -174,7 +175,7 @@ export async function utiliserToken(token, joursTravailles) {
 export async function nettoyerTokensExpires() {
   try {
     const tokens = await lireTokens();
-    const limite = dayjs().subtract(30, 'day');
+    const limite = dayjs().subtract(craTokenConfig.cleanupDays, 'day');
 
     const tokensActifs = tokens.filter(t => {
       const dateExpiration = dayjs(t.dateExpiration);

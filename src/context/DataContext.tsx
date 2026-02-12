@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Client, Salarie, Facture, Entreprise, DataContextType, Statistiques } from '../types';
 import { getSalariesSansFactureDuMois } from '../utils/invoiceUtils';
 import { API_BASE_URL } from '../config';
+import { INVOICE_PREFIX, INVOICE_NUMBER_PADDING } from '../constants';
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
@@ -171,8 +172,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const genererNumeroFacture = (): string => {
     const annee = new Date().getFullYear();
     const nombreFactures = factures.length;
-    const numero = String(nombreFactures + 1).padStart(3, '0');
-    return `FAC-${annee}-${numero}`;
+    const numero = String(nombreFactures + 1).padStart(INVOICE_NUMBER_PADDING, '0');
+    return `${INVOICE_PREFIX}-${annee}-${numero}`;
   };
 
   const ajouterFacture = async (facture: Omit<Facture, 'id' | 'numero'>): Promise<Facture> => {

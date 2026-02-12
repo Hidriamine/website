@@ -1,0 +1,132 @@
+[
+  {
+    "id": "1",
+    "nom": "KOONZ",
+    "adresse": "71 Boulevard de Montmorency",
+    "codePostal": "75016",
+    "ville": "Paris",
+    "email": "office@koonz.fr,hubert.andre@koonz.fr",
+    "siret": "88306725800011",
+    "delaiFacturation": 30
+  },
+  {
+    "id": "2",
+    "nom": "INFOGENE TEST",
+    "adresse": "19 Rue d’Orléans",
+    "codePostal": "92200",
+    "ville": "Neuilly sur Seine",
+    "email": "imane.hijra@infogene.fr,comptabilite@infogene.fr",
+    "siret": "90774695200023",
+    "delaiFacturation": 30
+  },
+  {
+    "id": "3",
+    "nom": "INTM SAS",
+    "adresse": "2 Rue Kléber",
+    "codePostal": "92300",
+    "ville": "Levallois-Perret",
+    "email": "fournisseurs@intm.fr",
+    "siret": "45320724300149",
+    "delaiFacturation": 30
+  },
+  {
+    "id": "4",
+    "nom": "ADONYS",
+    "adresse": "64 Rue Rambuteau",
+    "codePostal": "75003",
+    "ville": "Paris",
+    "email": "comptabilite@adonys.net",
+    "siret": "80418345700022",
+    "delaiFacturation": 30
+  },
+  {
+    "id": "5",
+    "nom": "TEOLIA CONSULTING",
+    "adresse": "8-20 Rue Jacques Dulud",
+    "codePostal": "92200",
+    "ville": "Neuilly-sur-Seine",
+    "email": "gestion@teolia.fr",
+    "siret": "80253228300024",
+    "delaiFacturation": 45
+  },
+  {
+    "id": "6",
+    "nom": "SMILE",
+    "adresse": "163 Quai du Docteur Dervaux",
+    "codePostal": "92600",
+    "ville": "Asnières-sur-Seine",
+    "email": "factures.fournisseurs@smile.fr",
+    "siret": "37861536300322",
+    "delaiFacturation": 30
+  },
+  {
+    "id": "7",
+    "nom": "HARINGTON TECHNOLOGIES",
+    "adresse": "105 Rue Jules Guesde",
+    "codePostal": "92300",
+    "ville": "Levallois-Perret",
+    "email": "hfacturation@harington.fr,syrine@harington.fr,ali@harington.fr",
+    "siret": "50463639000032",
+    "delaiFacturation": 30
+  },
+  {
+    "id": "8",
+    "nom": "OBJECTWARE",
+    "adresse": "10 Avenue de Messine",
+    "codePostal": "75008",
+    "ville": "Paris",
+    "email": "vdegen@objectwaregroup.com,mtrabelsi@objectware.fr",
+    "siret": "42422623100068",
+    "delaiFacturation": 30
+  },
+  {
+    "id": "9",
+    "nom": "MPG PARTNERS",
+    "adresse": "3 Rue de Stockholm",
+    "codePostal": "75008",
+    "ville": "Paris",
+    "email": "mpg-partners-wfvjvem5@suppliers.pennylane.com,compta@mpg-partners.com,matthias.poirier@mpg-partners.com",
+    "siret": "53232414200050",
+    "delaiFacturation": 30
+  },
+  {
+    "id": "10",
+    "nom": "NIJI",
+    "adresse": "14 Boulevard des Frères Voisin",
+    "codePostal": "92130",
+    "ville": "Issy-les-Moulineaux",
+    "email": "comptabilite-fournisseurs@niji.fr,comptabilite@niji.fr",
+    "siret": "43905527800162",
+    "delaiFacturation": 30
+  },
+  {
+    "id": "11",
+    "nom": "COMPLEO TECHNOLOGIES",
+    "adresse": "110 Esplanade du Général de Gaulle",
+    "codePostal": "92400",
+    "ville": "Courbevoie",
+    "email": "compta@compleotech.net,l.elarify@compleotech.net,h.nordine@compleotech.net,m.mariami@compleotech.net",
+    "siret": "82519424400026",
+    "delaiFacturation": 45
+  },
+  {
+    "id": "12",
+    "nom": "SULLY GROUP",
+    "adresse": "97 ALLEE ALEXANDRE BORODINE PARC TECHNOLOGIQUE WOODSTOCK/DOUGLAS 5 ",
+    "codePostal": "69800",
+    "ville": "SAINT-PRIEST",
+    "email": "rte@efactures-cegedim.fr,ugo.fillastre@sully-group.com",
+    "siret": "39909133900156",
+    "delaiFacturation": 60
+  },
+  {
+    "nom": "a square consultin",
+    "adresse": "57 avenue ",
+    "codePostal": "92400",
+    "ville": "courbevoie",
+    "email": "contact@entreprise.com",
+    "siret": "12345678900012",
+    "delaiFacturation": 30,
+    "id": "1764093575719"
+  }
+]

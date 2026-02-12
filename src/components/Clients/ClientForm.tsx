@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Modal, Form, Input, InputNumber, message } from 'antd';
 import { useData } from '../../context/DataContext';
 import { Client } from '../../types';
+import { DEFAULT_DELAI_FACTURATION } from '../../constants';
 
 interface ClientFormProps {
   open: boolean;
@@ -80,7 +81,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ open, onCancel, client }) => {
         form={form}
         layout="vertical"
         initialValues={{
-          delaiFacturation: 30,
+          delaiFacturation: DEFAULT_DELAI_FACTURATION,
         }}
       >
         <Form.Item

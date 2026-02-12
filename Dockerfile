@@ -12,7 +12,8 @@ RUN npm ci
 # Copier le reste des fichiers
 COPY . .
 
-# Build du frontend avec Vite
+# Build du frontend avec l'URL API relative
+ENV VITE_API_URL=/api
 RUN npm run build
 
 # Étape 2 : Image de production
@@ -31,11 +32,8 @@ COPY server.js .
 COPY services ./services
 COPY src/data ./src/data
 
-# Créer le dossier pour les fichiers statiques du frontend
-RUN mkdir -p /usr/share/nginx/html
-
-# Copier le build du frontend depuis l'étape précédente
-COPY --from=frontend-builder /app/dist /usr/share/nginx/html
+# Copier le build du frontend dans le dossier dist/ (servi par Express)
+COPY --from=frontend-builder /app/dist ./dist
 
 # Exposer le port de l'API
 EXPOSE 3001

@@ -4,17 +4,14 @@ import bodyParser from 'body-parser';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import dotenv from 'dotenv';
 import dayjs from 'dayjs';
 import 'dayjs/locale/fr.js';
 import cron from 'node-cron';
+import config from './config/index.js';
 import { genererFacturePDF, genererNomFichierFacture } from './services/pdfGenerator.js';
 import { envoyerEmailFacture } from './services/emailService.js';
 import { envoyerRappelsCRA } from './services/notificationService.js';
 import { validerToken, utiliserToken } from './services/craTokenService.js';
-
-// Charger les variables d'environnement depuis le fichier .env
-dotenv.config();
 
 // Configurer dayjs en français
 dayjs.locale('fr');
@@ -23,11 +20,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3001;
+const { port: PORT, host: HOST } = config.server;
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
+
+// Servir les fichiers statiques du frontend (build Vite) en production
+const distPath = path.join(__dirname, 'dist');
+app.use(express.static(distPath));
 
 // Chemins des fichiers JSON
 const CLIENTS_FILE = path.join(__dirname, 'src', 'data', 'clients.json');
@@ -36,23 +37,36 @@ const FACTURES_FILE = path.join(__dirname, 'src', 'data', 'factures.json');
 const ENTREPRISE_FILE = path.join(__dirname, 'src', 'data', 'entreprise.json');
 const USERS_FILE = path.join(__dirname, 'src', 'data', 'users.json');
 
+// Vérifier que le dossier data existe au démarrage
+const DATA_DIR = path.join(__dirname, 'src', 'data');
+fs.access(DATA_DIR).then(() => {
+  console.log(`📂 Dossier data trouvé: ${DATA_DIR}`);
+}).catch(() => {
+  console.error(`❌ Dossier data introuvable: ${DATA_DIR}`);
+  console.error(`   Vérifiez que le dossier src/data/ existe et contient les fichiers JSON`);
+});
+
 // Fonctions utilitaires pour lire/écrire les fichiers JSON
 async function readJSONFile(filePath) {
   try {
+    await fs.access(filePath);
     const data = await fs.readFile(filePath, 'utf8');
     return JSON.parse(data);
   } catch (error) {
-    console.error(`Erreur lecture fichier ${filePath}:`, error);
+    console.error(`Erreur lecture fichier ${filePath}:`, error.message);
+    console.error(`  Chemin absolu: ${path.resolve(filePath)}`);
     return null;
   }
 }
 
 async function writeJSONFile(filePath, data) {
   try {
+    // Créer le dossier parent si nécessaire
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
     await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8');
     return true;
   } catch (error) {
-    console.error(`Erreur écriture fichier ${filePath}:`, error);
+    console.error(`Erreur écriture fichier ${filePath}:`, error.message);
     return false;
   }
 }
@@ -255,8 +269,8 @@ app.post('/api/factures', async (req, res) => {
   // Générer le numéro de facture si non fourni
   if (!nouvelleFacture.numero) {
     const annee = new Date().getFullYear();
-    const numero = String(factures.length + 1).padStart(3, '0');
-    nouvelleFacture.numero = `FAC-${annee}-${numero}`;
+    const numero = String(factures.length + 1).padStart(config.facturation.invoiceNumberPadding, '0');
+    nouvelleFacture.numero = `${config.facturation.invoicePrefix}-${annee}-${numero}`;
   }
 
   factures.push(nouvelleFacture);
@@ -412,11 +426,11 @@ async function envoyerRappelsCRAAutomatique() {
 // Planifier l'envoi des rappels CRA chaque 25 du mois à 9h00
 // Format cron: minute heure jour mois jour_semaine
 // '0 9 25 * *' = à 9h00 le 25 de chaque mois
-cron.schedule('13 22 25 * *', () => {
+cron.schedule(config.cron.schedule, () => {
   console.log('\n⏰ Tâche planifiée : Rappels CRA du 25 du mois');
   envoyerRappelsCRAAutomatique();
 }, {
-  timezone: 'Europe/Paris'
+  timezone: config.cron.timezone
 });
 
 // ============ ENDPOINT MANUEL POUR TESTER LES RAPPELS CRA ============
@@ -523,10 +537,10 @@ app.post('/api/cra-saisie', async (req, res) => {
     const tokenData = validation.data;
 
     // Valider le nombre de jours
-    if (!joursTravailles || joursTravailles <= 0 || joursTravailles > 31) {
+    if (!joursTravailles || joursTravailles <= 0 || joursTravailles > config.facturation.maxJoursTravailles) {
       return res.status(400).json({
         success: false,
-        error: 'Le nombre de jours travaillés doit être entre 1 et 31',
+        error: `Le nombre de jours travaillés doit être entre 1 et ${config.facturation.maxJoursTravailles}`,
       });
     }
 
@@ -561,14 +575,14 @@ app.post('/api/cra-saisie', async (req, res) => {
 
     // Calculer les montants
     const montantHT = joursTravailles * tokenData.tauxJournalier;
-    const tauxTVA = 20;
+    const tauxTVA = config.facturation.tauxTVA;
     const montantTVA = montantHT * (tauxTVA / 100);
     const totalTTC = montantHT + montantTVA;
 
     // Générer le numéro de facture
     const annee = dateMois.year();
-    const numero = String(factures.length + 1).padStart(3, '0');
-    const numeroFacture = `FAC-${annee}-${numero}`;
+    const numero = String(factures.length + 1).padStart(config.facturation.invoiceNumberPadding, '0');
+    const numeroFacture = `${config.facturation.invoicePrefix}-${annee}-${numero}`;
 
     // Créer la facture
     const nouvelleFacture = {
@@ -616,12 +630,25 @@ app.post('/api/cra-saisie', async (req, res) => {
   }
 });
 
+// Fallback SPA : toutes les routes non-API renvoient index.html
+// Cela permet au routeur React de gérer la navigation côté client
+app.get('{*path}', (req, res) => {
+  const indexPath = path.join(distPath, 'index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error('Erreur lors de l\'envoi de index.html:', err);
+      res.status(500).send('Erreur serveur');
+    }
+  });
+});
+
 // Démarrer le serveur
-app.listen(PORT, () => {
-  console.log(`✅ Serveur API démarré sur http://localhost:${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`✅ Serveur démarré sur http://${HOST}:${PORT}`);
   console.log(`📁 Fichiers JSON:`);
   console.log(`   - Clients: ${CLIENTS_FILE}`);
   console.log(`   - Salariés: ${SALARIES_FILE}`);
   console.log(`   - Factures: ${FACTURES_FILE}`);
+  console.log(`📂 Frontend servi depuis: ${distPath}`);
   console.log(`\n⏰ Tâche planifiée : Rappels CRA activés (chaque 25 du mois à 9h00)`);
 });

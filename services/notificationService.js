@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer';
 import dayjs from 'dayjs';
 import 'dayjs/locale/fr.js';
 import { creerTokenCRA } from './craTokenService.js';
+import { smtp, server, urls, cron as cronConfig, craToken as craTokenConfig } from '../config/index.js';
 
 // Configuration de dayjs en français
 dayjs.locale('fr');
@@ -10,19 +11,16 @@ dayjs.locale('fr');
  * Crée un transporteur de mail pour les notifications
  */
 const creerTransporteur = () => {
-  const port = parseInt(process.env.SMTP_PORT || '587', 10);
-  const pass = process.env.SMTP_PASS +'#';
-
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-    port: port,
-    secure: port === 465,
+    host: smtp.host,
+    port: smtp.port,
+    secure: smtp.port === smtp.sslPort,
     auth: {
-      user: process.env.SMTP_USER || 'test@example.com',
-      pass: pass, //process.env.SMTP_PASS || 'password',
+      user: smtp.user,
+      pass: smtp.pass,
     },
     tls: {
-      rejectUnauthorized: process.env.NODE_ENV === 'production',
+      rejectUnauthorized: server.isProduction,
     },
   });
 };
@@ -128,7 +126,7 @@ const genererTemplateRappelCRA = (salarie, mois, annee, lienSaisie) => {
 
       <div class="link-info">
         <strong>ℹ️ Information importante :</strong><br>
-        Ce lien est <strong>à usage unique</strong> et expire automatiquement dans <strong>10 jours</strong>.<br>
+        Ce lien est <strong>à usage unique</strong> et expire automatiquement dans <strong>${craTokenConfig.expirationDays} jours</strong>.<br>
         Une fois votre CRA saisi, la facture sera générée automatiquement.
       </div>
 
@@ -176,7 +174,7 @@ export const envoyerRappelCRAEmail = async (salarie, entreprise) => {
     const tokenData = await creerTokenCRA(salarie, moisFormat);
 
     // Construire le lien de saisie CRA
-    const baseUrl = process.env.BASE_URL || 'http://localhost:5173';
+    const baseUrl = urls.baseUrl;
     const lienSaisie = `${baseUrl}/saisie-cra/${tokenData.token}`;
 
     // Générer le contenu de l'email avec le lien
@@ -330,7 +328,7 @@ export const envoyerRappelsCRA = async (salaries, entreprise, options = { email:
     resultats.details.push(resultatSalarie);
 
     // Attendre un peu entre chaque envoi pour ne pas surcharger le serveur SMTP
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, cronConfig.emailSendDelayMs));
   }
 
   console.log(`\n✨ Rappels CRA terminés :`);

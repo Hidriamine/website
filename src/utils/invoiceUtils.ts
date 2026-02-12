@@ -1,8 +1,9 @@
 import dayjs from 'dayjs';
 import { LigneFacture, MontantsFacture, Facture, ValidationResult, Salarie, StatutFacture } from '../types';
+import { TAUX_TVA } from '../constants';
 
 // Calculer les montants d'une facture
-export const calculerMontantsFacture = (lignes: LigneFacture[], tauxTVA: number = 20): MontantsFacture => {
+export const calculerMontantsFacture = (lignes: LigneFacture[], tauxTVA: number = TAUX_TVA): MontantsFacture => {
   const totalHT = lignes.reduce((sum, ligne) => sum + ligne.montantHT, 0);
   const montantTVA = Math.round(totalHT * (tauxTVA / 100) * 100) / 100;
   const totalTTC = Math.round((totalHT + montantTVA) * 100) / 100;

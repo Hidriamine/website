@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import dayjs from 'dayjs';
 import 'dayjs/locale/fr.js';
+import { smtp, server } from '../config/index.js';
 
 // Configuration de dayjs en français
 dayjs.locale('fr');
@@ -10,23 +11,16 @@ dayjs.locale('fr');
  * Note: Configuration à personnaliser selon votre fournisseur d'email
  */
 const creerTransporteur = () => {
-  // Pour le développement/test, on utilise un compte de test Ethereal
-  // En production, remplacez ceci par votre configuration SMTP réelle
-  const port = parseInt(process.env.SMTP_PORT || '587', 10);
-  const pass = process.env.SMTP_PASS +'#';
-  
-
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-    port: port,
-    secure: port === 465, // true pour 465 (SSL), false pour 587 (STARTTLS)
+    host: smtp.host,
+    port: smtp.port,
+    secure: smtp.port === smtp.sslPort,
     auth: {
-      user: process.env.SMTP_USER || 'test@example.com',
-      pass: pass, //process.env.SMTP_PASS || 'password',
+      user: smtp.user,
+      pass: smtp.pass,
     },
     tls: {
-      // Ne pas échouer sur les certificats invalides (utile pour le développement)
-      rejectUnauthorized: process.env.NODE_ENV === 'production',
+      rejectUnauthorized: server.isProduction,
     },
   });
 };
@@ -133,7 +127,7 @@ export const envoyerEmailFacture = async ({
     });
 
     // Pour le développement avec Ethereal, afficher l'URL de prévisualisation
-    if (process.env.NODE_ENV !== 'production') {
+    if (!server.isProduction) {
       const previewUrl = nodemailer.getTestMessageUrl(info);
       if (previewUrl) {
         console.log('📧 Prévisualiser l\'email:', previewUrl);

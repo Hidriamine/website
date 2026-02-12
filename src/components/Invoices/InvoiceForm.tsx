@@ -4,6 +4,7 @@ import type { Dayjs } from 'dayjs';
 import { useData } from '../../context/DataContext';
 import { Salarie, StatutFacture } from '../../types';
 import { calculerMontantsFacture, calculerLigneFacture, calculerDateEcheance, formaterMontant } from '../../utils/invoiceUtils';
+import { TAUX_TVA } from '../../constants';
 import dayjs from 'dayjs';
 
 interface InvoiceFormProps {
@@ -121,7 +122,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ open, onCancel }) => {
         dateEcheance: dateEcheance,
         lignes: [ligne],
         totalHT: totaux.totalHT,
-        tauxTVA: 20,
+        tauxTVA: TAUX_TVA,
         montantTVA: totaux.montantTVA,
         totalTTC: totaux.totalTTC,
         statut: 'brouillon' as StatutFacture, // Statut par défaut
@@ -266,7 +267,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ open, onCancel }) => {
                   <strong>{formaterMontant(montantHT)}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16 }}>
-                  <span>TVA (20%):</span>
+                  <span>TVA ({TAUX_TVA}%):</span>
                   <strong>{formaterMontant(totaux.montantTVA)}</strong>
                 </div>
                 <Divider style={{ margin: '12px 0' }} />
