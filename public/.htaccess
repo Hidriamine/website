@@ -1,0 +1,62 @@
+RewriteEngine On
+
+# Forcer HTTPS (décommenter si SSL est activé sur IONOS)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# ============ API PHP ============
+# Toutes les requêtes /api/* sont routées vers le routeur PHP
+RewriteRule ^api/(.*)$ api/index.php [QSA,L]
+
+# ============ SPA REACT ============
+# Ne pas réécrire les fichiers et dossiers existants
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Toutes les autres requêtes -> React SPA (index.html)
+RewriteRule ^ index.html [L]
+
+# ============ SÉCURITÉ ============
+# Bloquer l'accès direct aux fichiers de données JSON
+<FilesMatch "\.(json)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Bloquer l'accès aux fichiers cachés (.env, .git, etc.)
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# ============ PERFORMANCE ============
+# Compression gzip
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css
+    AddOutputFilterByType DEFLATE application/javascript application/json
+    AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# Cache des fichiers statiques
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType font/woff "access plus 1 year"
+</IfModule>
