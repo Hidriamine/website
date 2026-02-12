@@ -13,7 +13,7 @@ dist-ssr
 *.local
 
 # Environment variables
-.env
+#.env
 
 # Docker & SSL
 certbot/
@@ -28,4 +28,4 @@ certbot/
 *.njsproj
 *.sln
 *.sw?
-.env
+
