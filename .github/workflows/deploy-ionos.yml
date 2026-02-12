@@ -1,0 +1,75 @@
+name: Deploy to IONOS VPS
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+env:
+  DOCKER_IMAGE: facturation-app
+  APP_DIR: /opt/facturation-app
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+        env:
+          VITE_API_URL: /api
+
+      - name: Deploy to IONOS VPS via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.IONOS_VPS_HOST }}
+          username: ${{ secrets.IONOS_VPS_USER }}
+          key: ${{ secrets.IONOS_VPS_SSH_KEY }}
+          port: ${{ secrets.IONOS_VPS_SSH_PORT || 22 }}
+          script: |
+            cd ${{ env.APP_DIR }}
+
+            # Pull latest code
+            git pull origin ${{ github.ref_name }}
+
+            # Build and restart containers
+            docker compose build --no-cache app
+            docker compose up -d
+
+            # Cleanup old Docker images
+            docker image prune -f
+
+            echo "Deployment completed successfully!"
+
+      - name: Verify deployment
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.IONOS_VPS_HOST }}
+          username: ${{ secrets.IONOS_VPS_USER }}
+          key: ${{ secrets.IONOS_VPS_SSH_KEY }}
+          port: ${{ secrets.IONOS_VPS_SSH_PORT || 22 }}
+          script: |
+            # Wait for the app to start
+            sleep 10
+
+            # Check containers are running
+            cd ${{ env.APP_DIR }}
+            docker compose ps
+
+            # Health check
+            curl -sf http://localhost:3001/api/entreprise > /dev/null && echo "API is healthy!" || echo "Warning: API health check failed"

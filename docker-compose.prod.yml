@@ -1,17 +1,22 @@
 version: '3.8'
 
+# Docker Compose de production pour VPS IONOS
+# Usage: docker compose -f docker-compose.prod.yml up -d
+
 services:
   # Application Node.js (API + Frontend servis par Express)
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: facturation-app
-    restart: unless-stopped
+    restart: always
     environment:
       - NODE_ENV=production
     env_file:
       - .env
     volumes:
-      - ./src/data:/app/src/data
+      - app-data:/app/src/data
     networks:
       - app-network
     expose:
@@ -32,14 +37,14 @@ services:
   nginx:
     image: nginx:alpine
     container_name: facturation-nginx
-    restart: unless-stopped
+    restart: always
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
     depends_on:
       app:
         condition: service_healthy
@@ -61,6 +66,37 @@ services:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # Watchtower - Mise a jour automatique des conteneurs (optionnel)
+  watchtower:
+    image: containrrr/watchtower
+    container_name: facturation-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=86400
+      - WATCHTOWER_LABEL_ENABLE=false
+      - WATCHTOWER_MONITOR_ONLY=true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+volumes:
+  app-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/src/data
 
 networks:
   app-network:
