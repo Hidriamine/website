@@ -1,32 +1,9 @@
 import nodemailer from 'nodemailer';
-import dayjs from 'dayjs';
-import 'dayjs/locale/fr.js';
-import { smtp, server } from '../config/index.js';
-
-// Configuration de dayjs en français
-dayjs.locale('fr');
+import { creerTransporteur, capitaliserMois } from './mailTransport.js';
+import { server } from '../config/index.js';
 
 /**
- * Crée un transporteur de mail
- * Note: Configuration à personnaliser selon votre fournisseur d'email
- */
-const creerTransporteur = () => {
-  return nodemailer.createTransport({
-    host: smtp.host,
-    port: smtp.port,
-    secure: smtp.port === smtp.sslPort,
-    auth: {
-      user: smtp.user,
-      pass: smtp.pass,
-    },
-    tls: {
-      rejectUnauthorized: server.isProduction,
-    },
-  });
-};
-
-/**
- * Génère le template d'email pour l'envoi de facture
+ * Genere le template d'email pour l'envoi de facture
  * @param {string} nomMois - Le nom du mois de la facture
  * @returns {string} - Le contenu HTML de l'email
  */
@@ -41,9 +18,9 @@ const genererTemplateEmail = (nomMois) => {
   <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
     <p>Cher Client,</p>
 
-    <p>Veuillez trouver en pièce jointe la facture du mois ${nomMois}.</p>
+    <p>Veuillez trouver en piece jointe la facture du mois ${nomMois}.</p>
 
-    <p>En vous remerciant pour votre règlement.</p>
+    <p>En vous remerciant pour votre reglement.</p>
 
     <p style="margin-top: 30px;">
       Cordialement,<br>
@@ -56,28 +33,16 @@ const genererTemplateEmail = (nomMois) => {
 };
 
 /**
- * Extrait le nom du mois à partir de la date d'émission
- * @param {string} dateEmission - La date d'émission au format YYYY-MM-DD
- * @returns {string} - Le nom du mois (ex: "Janvier", "Février", etc.)
- */
-const extraireNomMois = (dateEmission) => {
-  const date = dayjs(dateEmission);
-  // Capitaliser la première lettre du mois
-  const nomMois = date.format('MMMM');
-  return nomMois.charAt(0).toUpperCase() + nomMois.slice(1);
-};
-
-/**
- * Envoie un email avec la facture en pièce jointe
+ * Envoie un email avec la facture en piece jointe
  * @param {Object} options - Les options d'envoi
- * @param {string|string[]} options.destinataire - L'email du destinataire ou liste d'emails séparés par virgule
+ * @param {string|string[]} options.destinataire - L'email du destinataire
  * @param {string} options.sujet - Le sujet de l'email
- * @param {string} options.dateEmission - La date d'émission de la facture
+ * @param {string} options.dateEmission - La date d'emission de la facture
  * @param {Buffer} options.pdfBuffer - Le buffer du PDF
  * @param {string} options.nomFichier - Le nom du fichier PDF
  * @param {Object} options.entreprise - Les informations de l'entreprise
- * @param {string} [options.emailCopie] - Email(s) à mettre en copie (CC)
- * @returns {Promise<Object>} - Le résultat de l'envoi
+ * @param {string} [options.emailCopie] - Email(s) a mettre en copie (CC)
+ * @returns {Promise<Object>} - Le resultat de l'envoi
  */
 export const envoyerEmailFacture = async ({
   destinataire,
@@ -90,14 +55,9 @@ export const envoyerEmailFacture = async ({
 }) => {
   try {
     const transporteur = creerTransporteur();
-
-    // Extraire le nom du mois de la date d'émission
-    const nomMois = extraireNomMois(dateEmission);
-
-    // Générer le contenu de l'email
+    const nomMois = capitaliserMois(dateEmission);
     const htmlContent = genererTemplateEmail(nomMois);
 
-    // Options de l'email
     const mailOptions = {
       from: `"${entreprise.nom}" <${entreprise.email}>`,
       to: destinataire,
@@ -112,25 +72,22 @@ export const envoyerEmailFacture = async ({
       ],
     };
 
-    // Ajouter l'email en copie si fourni
     if (emailCopie) {
       mailOptions.cc = emailCopie;
     }
 
-    // Envoi de l'email
     const info = await transporteur.sendMail(mailOptions);
 
-    console.log('✅ Email envoyé avec succès:', {
+    console.log('Email envoye avec succes:', {
       messageId: info.messageId,
       destinataire,
       sujet,
     });
 
-    // Pour le développement avec Ethereal, afficher l'URL de prévisualisation
     if (!server.isProduction) {
       const previewUrl = nodemailer.getTestMessageUrl(info);
       if (previewUrl) {
-        console.log('📧 Prévisualiser l\'email:', previewUrl);
+        console.log('Previsualiser l\'email:', previewUrl);
       }
     }
 
@@ -140,30 +97,24 @@ export const envoyerEmailFacture = async ({
       previewUrl: nodemailer.getTestMessageUrl(info),
     };
   } catch (error) {
-    console.error('❌ Erreur lors de l\'envoi de l\'email:', error);
+    console.error('Erreur lors de l\'envoi de l\'email:', error);
     throw error;
   }
 };
 
 /**
- * Crée un compte de test Ethereal pour le développement
+ * Cree un compte de test Ethereal pour le developpement
  * @returns {Promise<Object>} - Les informations du compte de test
  */
 export const creerCompteTestEmail = async () => {
   try {
     const testAccount = await nodemailer.createTestAccount();
-    console.log('📧 Compte de test Ethereal créé:');
+    console.log('Compte de test Ethereal cree:');
     console.log('   User:', testAccount.user);
     console.log('   Pass:', testAccount.pass);
-    console.log('');
-    console.log('Ajoutez ces variables d\'environnement pour utiliser ce compte:');
-    console.log(`   SMTP_HOST=smtp.ethereal.email`);
-    console.log(`   SMTP_PORT=587`);
-    console.log(`   SMTP_USER=${testAccount.user}`);
-    console.log(`   SMTP_PASS=${testAccount.pass}`);
     return testAccount;
   } catch (error) {
-    console.error('Erreur lors de la création du compte de test:', error);
+    console.error('Erreur lors de la creation du compte de test:', error);
     throw error;
   }
 };

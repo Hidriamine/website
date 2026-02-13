@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Client, Salarie, Facture, Entreprise, DataContextType, Statistiques } from '../types';
 import { getSalariesSansFactureDuMois } from '../utils/invoiceUtils';
-import { API_BASE_URL } from '../config';
+import { entrepriseApi, clientsApi, salariesApi, facturesApi } from '../services/apiClient';
 import { INVOICE_PREFIX, INVOICE_NUMBER_PADDING } from '../constants';
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -25,24 +25,16 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const [factures, setFactures] = useState<Facture[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Charger les données depuis l'API au démarrage
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
-
-        // Charger toutes les données en parallèle
-        const [entrepriseRes, clientsRes, salariesRes, facturesRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/entreprise`),
-          fetch(`${API_BASE_URL}/clients`),
-          fetch(`${API_BASE_URL}/salaries`),
-          fetch(`${API_BASE_URL}/factures`),
+        const [entrepriseData, clientsData, salariesData, facturesData] = await Promise.all([
+          entrepriseApi.get(),
+          clientsApi.getAll(),
+          salariesApi.getAll(),
+          facturesApi.getAll(),
         ]);
-
-        const entrepriseData = await entrepriseRes.json();
-        const clientsData = await clientsRes.json();
-        const salariesData = await salariesRes.json();
-        const facturesData = await facturesRes.json();
 
         setEntreprise(entrepriseData);
         setClients(clientsData);
@@ -60,53 +52,19 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // ============ CLIENTS ============
   const ajouterClient = async (client: Omit<Client, 'id'>): Promise<Client> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/clients`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(client),
-      });
-
-      const nouveauClient = await response.json();
-      setClients([...clients, nouveauClient]);
-      return nouveauClient;
-    } catch (error) {
-      console.error('Erreur lors de l\'ajout du client:', error);
-      throw error;
-    }
+    const nouveauClient = await clientsApi.create(client);
+    setClients([...clients, nouveauClient]);
+    return nouveauClient;
   };
 
   const modifierClient = async (id: string, clientModifie: Partial<Omit<Client, 'id'>>): Promise<void> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/clients/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(clientModifie),
-      });
-
-      const clientMisAJour = await response.json();
-      setClients(clients.map(c => c.id === id ? clientMisAJour : c));
-    } catch (error) {
-      console.error('Erreur lors de la modification du client:', error);
-      throw error;
-    }
+    const clientMisAJour = await clientsApi.update(id, clientModifie);
+    setClients(clients.map(c => c.id === id ? clientMisAJour : c));
   };
 
   const supprimerClient = async (id: string): Promise<void> => {
-    try {
-      await fetch(`${API_BASE_URL}/clients/${id}`, {
-        method: 'DELETE',
-      });
-
-      setClients(clients.filter(c => c.id !== id));
-    } catch (error) {
-      console.error('Erreur lors de la suppression du client:', error);
-      throw error;
-    }
+    await clientsApi.delete(id);
+    setClients(clients.filter(c => c.id !== id));
   };
 
   const getClientById = (id: string): Client | undefined => {
@@ -115,53 +73,19 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // ============ SALARIES ============
   const ajouterSalarie = async (salarie: Omit<Salarie, 'id'>): Promise<Salarie> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/salaries`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(salarie),
-      });
-
-      const nouveauSalarie = await response.json();
-      setSalaries([...salaries, nouveauSalarie]);
-      return nouveauSalarie;
-    } catch (error) {
-      console.error('Erreur lors de l\'ajout du salarié:', error);
-      throw error;
-    }
+    const nouveauSalarie = await salariesApi.create(salarie);
+    setSalaries([...salaries, nouveauSalarie]);
+    return nouveauSalarie;
   };
 
   const modifierSalarie = async (id: string, salarieModifie: Partial<Omit<Salarie, 'id'>>): Promise<void> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/salaries/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(salarieModifie),
-      });
-
-      const salarieMisAJour = await response.json();
-      setSalaries(salaries.map(s => s.id === id ? salarieMisAJour : s));
-    } catch (error) {
-      console.error('Erreur lors de la modification du salarié:', error);
-      throw error;
-    }
+    const salarieMisAJour = await salariesApi.update(id, salarieModifie);
+    setSalaries(salaries.map(s => s.id === id ? salarieMisAJour : s));
   };
 
   const supprimerSalarie = async (id: string): Promise<void> => {
-    try {
-      await fetch(`${API_BASE_URL}/salaries/${id}`, {
-        method: 'DELETE',
-      });
-
-      setSalaries(salaries.filter(s => s.id !== id));
-    } catch (error) {
-      console.error('Erreur lors de la suppression du salarié:', error);
-      throw error;
-    }
+    await salariesApi.delete(id);
+    setSalaries(salaries.filter(s => s.id !== id));
   };
 
   const getSalariesByClientId = (clientId: string): Salarie[] => {
@@ -177,53 +101,19 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   };
 
   const ajouterFacture = async (facture: Omit<Facture, 'id' | 'numero'>): Promise<Facture> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/factures`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(facture),
-      });
-
-      const nouvelleFacture = await response.json();
-      setFactures([...factures, nouvelleFacture]);
-      return nouvelleFacture;
-    } catch (error) {
-      console.error('Erreur lors de l\'ajout de la facture:', error);
-      throw error;
-    }
+    const nouvelleFacture = await facturesApi.create(facture);
+    setFactures([...factures, nouvelleFacture]);
+    return nouvelleFacture;
   };
 
   const modifierFacture = async (id: string, factureModifiee: Partial<Omit<Facture, 'id' | 'numero'>>): Promise<void> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/factures/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(factureModifiee),
-      });
-
-      const factureMiseAJour = await response.json();
-      setFactures(factures.map(f => f.id === id ? factureMiseAJour : f));
-    } catch (error) {
-      console.error('Erreur lors de la modification de la facture:', error);
-      throw error;
-    }
+    const factureMiseAJour = await facturesApi.update(id, factureModifiee);
+    setFactures(factures.map(f => f.id === id ? factureMiseAJour : f));
   };
 
   const supprimerFacture = async (id: string): Promise<void> => {
-    try {
-      await fetch(`${API_BASE_URL}/factures/${id}`, {
-        method: 'DELETE',
-      });
-
-      setFactures(factures.filter(f => f.id !== id));
-    } catch (error) {
-      console.error('Erreur lors de la suppression de la facture:', error);
-      throw error;
-    }
+    await facturesApi.delete(id);
+    setFactures(factures.filter(f => f.id !== id));
   };
 
   const getFactureById = (id: string): Facture | undefined => {
@@ -258,31 +148,22 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     return getSalariesSansFactureDuMois(salaries, factures, mois);
   };
 
-  // Fonction de sauvegarde (non utilisée avec l'API mais maintenue pour compatibilité)
   const sauvegarderDonnees = (): void => {
-    // Les données sont automatiquement sauvegardées par les API
     console.log('Les données sont automatiquement sauvegardées dans les fichiers JSON');
   };
 
   const value: DataContextType = {
-    // Entreprise
     entreprise,
-
-    // Clients
     clients,
     ajouterClient,
     modifierClient,
     supprimerClient,
     getClientById,
-
-    // Salaries
     salaries,
     ajouterSalarie,
     modifierSalarie,
     supprimerSalarie,
     getSalariesByClientId,
-
-    // Factures
     factures,
     ajouterFacture,
     modifierFacture,
@@ -290,17 +171,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     getFactureById,
     getFacturesByClientId,
     genererNumeroFacture,
-
-    // Statistiques
     getStatistiques,
     getDernieresFactures,
     getSalariesSansFactureDuMois: getSalariesSansFactureDuMoisContext,
-
-    // Sauvegarde
     sauvegarderDonnees,
   };
 
-  // Afficher un loader pendant le chargement initial
   if (loading) {
     return (
       <div style={{

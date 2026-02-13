@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { API_BASE_URL } from '../config';
+import { authApi } from '../services/apiClient';
 
 interface User {
   id: string;
@@ -31,18 +31,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
 
   const login = async (email: string, password: string): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.error || 'Erreur de connexion');
-    }
-
-    const data = await response.json();
+    const data = await authApi.login(email, password);
     setUser(data.user);
     localStorage.setItem('user', JSON.stringify(data.user));
   };

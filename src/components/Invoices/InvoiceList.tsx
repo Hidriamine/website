@@ -8,7 +8,7 @@ import { formaterMontant, estEnRetard } from '../../utils/invoiceUtils';
 import InvoiceForm from './InvoiceForm';
 import InvoicePreview from './InvoicePreview';
 import { exporterFacturePDF } from './InvoicePdfExporter';
-import { API_BASE_URL } from '../../config';
+import { facturesApi } from '../../services/apiClient';
 import dayjs from 'dayjs';
 
 const InvoiceList: React.FC = () => {
@@ -49,33 +49,13 @@ const InvoiceList: React.FC = () => {
       try {
         message.loading({ content: 'Envoi de l\'email en cours...', key: 'email' });
 
-        const response = await fetch(`${API_BASE_URL}/factures/${factureId}/send-email`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+        const data = await facturesApi.sendEmail(factureId);
+
+        message.success({
+          content: `Email envoyé avec succès à ${data.destinataire}`,
+          key: 'email',
+          duration: 5,
         });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          message.success({
-            content: `Email envoyé avec succès à ${data.destinataire}`,
-            key: 'email',
-            duration: 5,
-          });
-
-          // Si en développement, afficher l'URL de prévisualisation
-          if (data.previewUrl) {
-            console.log('📧 Prévisualiser l\'email:', data.previewUrl);
-          }
-        } else {
-          message.error({
-            content: `Erreur lors de l'envoi de l'email: ${data.error}`,
-            key: 'email',
-            duration: 5,
-          });
-        }
       } catch (error) {
         console.error('Erreur lors de l\'envoi de l\'email:', error);
         message.error({

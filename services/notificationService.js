@@ -1,35 +1,16 @@
-import nodemailer from 'nodemailer';
 import dayjs from 'dayjs';
 import 'dayjs/locale/fr.js';
 import { creerTokenCRA } from './craTokenService.js';
-import { smtp, server, urls, cron as cronConfig, craToken as craTokenConfig } from '../config/index.js';
+import { creerTransporteur, capitaliserMois } from './mailTransport.js';
+import { urls, cron as cronConfig, craToken as craTokenConfig } from '../config/index.js';
 
-// Configuration de dayjs en français
 dayjs.locale('fr');
 
 /**
- * Crée un transporteur de mail pour les notifications
- */
-const creerTransporteur = () => {
-  return nodemailer.createTransport({
-    host: smtp.host,
-    port: smtp.port,
-    secure: smtp.port === smtp.sslPort,
-    auth: {
-      user: smtp.user,
-      pass: smtp.pass,
-    },
-    tls: {
-      rejectUnauthorized: server.isProduction,
-    },
-  });
-};
-
-/**
- * Génère le template d'email pour le rappel CRA
- * @param {Object} salarie - Les informations du salarié
+ * Genere le template d'email pour le rappel CRA
+ * @param {Object} salarie - Les informations du salarie
  * @param {string} mois - Le nom du mois
- * @param {string} annee - L'année
+ * @param {string} annee - L'annee
  * @param {string} lienSaisie - Le lien unique pour la saisie du CRA
  * @returns {string} - Le contenu HTML de l'email
  */
@@ -103,44 +84,44 @@ const genererTemplateRappelCRA = (salarie, mois, annee, lienSaisie) => {
 <body>
   <div class="container">
     <div class="header">
-      <h1>📋 Rappel CRA</h1>
+      <h1>Rappel CRA</h1>
     </div>
     <div class="content">
       <p>Bonjour ${salarie.prenom},</p>
 
-      <p>Nous vous rappelons qu'il est temps de saisir votre <strong>Compte Rendu d'Activité (CRA)</strong> pour le mois de <strong>${mois} ${annee}</strong>.</p>
+      <p>Nous vous rappelons qu'il est temps de saisir votre <strong>Compte Rendu d'Activite (CRA)</strong> pour le mois de <strong>${mois} ${annee}</strong>.</p>
 
       <div class="important">
-        <strong>⏰ Date limite :</strong> Merci de saisir votre CRA avant la fin du mois.
+        <strong>Date limite :</strong> Merci de saisir votre CRA avant la fin du mois.
       </div>
 
       <p><strong>Informations de votre mission :</strong></p>
       <ul>
         <li>Poste : ${salarie.poste}</li>
-        ${salarie.reference ? `<li>Référence : ${salarie.reference}</li>` : ''}
+        ${salarie.reference ? `<li>Reference : ${salarie.reference}</li>` : ''}
       </ul>
 
       <div style="text-align: center;">
-        <a href="${lienSaisie}" class="btn">🔗 Saisir mon CRA</a>
+        <a href="${lienSaisie}" class="btn">Saisir mon CRA</a>
       </div>
 
       <div class="link-info">
-        <strong>ℹ️ Information importante :</strong><br>
-        Ce lien est <strong>à usage unique</strong> et expire automatiquement dans <strong>${craTokenConfig.expirationDays} jours</strong>.<br>
-        Une fois votre CRA saisi, la facture sera générée automatiquement.
+        <strong>Information importante :</strong><br>
+        Ce lien est <strong>a usage unique</strong> et expire automatiquement dans <strong>${craTokenConfig.expirationDays} jours</strong>.<br>
+        Une fois votre CRA saisi, la facture sera generee automatiquement.
       </div>
 
-      <p>Si vous avez déjà saisi votre CRA, merci d'ignorer ce message.</p>
+      <p>Si vous avez deja saisi votre CRA, merci d'ignorer ce message.</p>
 
-      <p>Pour toute question, n'hésitez pas à nous contacter.</p>
+      <p>Pour toute question, n'hesitez pas a nous contacter.</p>
 
       <p style="margin-top: 30px;">
         Cordialement,<br>
-        <strong>L'équipe NEXGENSYS</strong>
+        <strong>L'equipe NEXGENSYS</strong>
       </p>
 
       <div class="footer">
-        <p>Ceci est un message automatique envoyé le 25 de chaque mois.</p>
+        <p>Ceci est un message automatique envoye le 25 de chaque mois.</p>
         <p style="color: #999; font-size: 11px; margin-top: 10px;">
           Si vous ne pouvez pas cliquer sur le bouton, copiez et collez ce lien dans votre navigateur :<br>
           ${lienSaisie}
@@ -154,33 +135,27 @@ const genererTemplateRappelCRA = (salarie, mois, annee, lienSaisie) => {
 };
 
 /**
- * Envoie un email de rappel CRA à un salarié
- * @param {Object} salarie - Les informations du salarié
+ * Envoie un email de rappel CRA a un salarie
+ * @param {Object} salarie - Les informations du salarie
  * @param {Object} entreprise - Les informations de l'entreprise
- * @returns {Promise<Object>} - Le résultat de l'envoi
+ * @returns {Promise<Object>} - Le resultat de l'envoi
  */
 export const envoyerRappelCRAEmail = async (salarie, entreprise) => {
   try {
     const transporteur = creerTransporteur();
 
-    // Obtenir le mois et l'année courants
     const maintenant = dayjs();
-    const mois = maintenant.format('MMMM');
-    const moisCapitalise = mois.charAt(0).toUpperCase() + mois.slice(1);
+    const moisCapitalise = capitaliserMois(maintenant);
     const annee = maintenant.format('YYYY');
-    const moisFormat = maintenant.format('YYYY-MM'); // Format pour le token
+    const moisFormat = maintenant.format('YYYY-MM');
 
-    // Créer un token unique pour ce salarié et ce mois
     const tokenData = await creerTokenCRA(salarie, moisFormat);
 
-    // Construire le lien de saisie CRA
     const baseUrl = urls.baseUrl;
     const lienSaisie = `${baseUrl}/saisie-cra/${tokenData.token}`;
 
-    // Générer le contenu de l'email avec le lien
     const htmlContent = genererTemplateRappelCRA(salarie, moisCapitalise, annee, lienSaisie);
 
-    // Options de l'email
     const mailOptions = {
       from: `"${entreprise.nom}" <${entreprise.email}>`,
       to: salarie.email,
@@ -188,11 +163,10 @@ export const envoyerRappelCRAEmail = async (salarie, entreprise) => {
       html: htmlContent,
     };
 
-    // Envoi de l'email
     const info = await transporteur.sendMail(mailOptions);
 
-    console.log(`✅ Email de rappel CRA envoyé à ${salarie.prenom} ${salarie.nom} (${salarie.email})`);
-    console.log(`   🔗 Lien de saisie : ${lienSaisie}`);
+    console.log(`Email de rappel CRA envoye a ${salarie.prenom} ${salarie.nom} (${salarie.email})`);
+    console.log(`   Lien de saisie : ${lienSaisie}`);
 
     return {
       success: true,
@@ -202,7 +176,7 @@ export const envoyerRappelCRAEmail = async (salarie, entreprise) => {
       lienSaisie: lienSaisie,
     };
   } catch (error) {
-    console.error(`❌ Erreur lors de l'envoi de l'email à ${salarie.prenom} ${salarie.nom}:`, error.message);
+    console.error(`Erreur lors de l'envoi de l'email a ${salarie.prenom} ${salarie.nom}:`, error.message);
     return {
       success: false,
       error: error.message,
@@ -212,79 +186,36 @@ export const envoyerRappelCRAEmail = async (salarie, entreprise) => {
 };
 
 /**
- * Envoie un SMS de rappel CRA à un salarié
- * Note: Nécessite la configuration d'un service SMS (Twilio, etc.)
- * @param {Object} salarie - Les informations du salarié
- * @returns {Promise<Object>} - Le résultat de l'envoi
+ * Envoie un SMS de rappel CRA a un salarie
+ * Note: Necessite la configuration d'un service SMS (Twilio, etc.)
+ * @param {Object} salarie - Les informations du salarie
+ * @returns {Promise<Object>} - Le resultat de l'envoi
  */
 export const envoyerRappelCRASMS = async (salarie) => {
-  try {
-    // Vérifier si le salarié a un numéro de téléphone
-    if (!salarie.telephone) {
-      console.log(`⚠️  Pas de numéro de téléphone pour ${salarie.prenom} ${salarie.nom}`);
-      return {
-        success: false,
-        error: 'Numéro de téléphone non configuré',
-        destinataire: salarie.telephone,
-      };
-    }
-
-    // Obtenir le mois et l'année courants
-    const maintenant = dayjs();
-    const mois = maintenant.format('MMMM');
-    const moisCapitalise = mois.charAt(0).toUpperCase() + mois.slice(1);
-    const annee = maintenant.format('YYYY');
-
-    const message = `Bonjour ${salarie.prenom}, rappel : merci d'envoyer votre CRA pour ${moisCapitalise} ${annee}. Cordialement, NEXGENSYS`;
-
-    // TODO: Implémenter l'envoi SMS avec votre service (Twilio, etc.)
-    // Exemple avec Twilio (à décommenter et configurer):
-    
-    const twilio = require('twilio');
-    const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-
-    const result = await client.messages.create({
-      body: message,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: salarie.telephone
-    });
-
-    console.log(`✅ SMS de rappel CRA envoyé à ${salarie.prenom} ${salarie.nom} (${salarie.telephone})`);
-    return {
-      success: true,
-      messageId: result.sid,
-      destinataire: salarie.telephone,
-    };
-    
-
-    console.log(`📱 SMS à envoyer à ${salarie.prenom} ${salarie.nom} (${salarie.telephone}): ${message}`);
-    console.log('ℹ️  L\'envoi de SMS n\'est pas encore configuré. Consultez CONFIGURATION_NOTIFICATIONS.md');
-
+  if (!salarie.telephone) {
     return {
       success: false,
-      error: 'Service SMS non configuré',
-      destinataire: salarie.telephone,
-      message: message,
-    };
-  } catch (error) {
-    console.error(`❌ Erreur lors de l'envoi du SMS à ${salarie.prenom} ${salarie.nom}:`, error.message);
-    return {
-      success: false,
-      error: error.message,
+      error: 'Numero de telephone non configure',
       destinataire: salarie.telephone,
     };
   }
+
+  return {
+    success: false,
+    error: 'Service SMS non configure',
+    destinataire: salarie.telephone,
+  };
 };
 
 /**
- * Envoie des rappels CRA à tous les salariés
- * @param {Array} salaries - La liste des salariés
+ * Envoie des rappels CRA a tous les salaries
+ * @param {Array} salaries - La liste des salaries
  * @param {Object} entreprise - Les informations de l'entreprise
  * @param {Object} options - Options d'envoi (email, sms)
- * @returns {Promise<Object>} - Le résultat des envois
+ * @returns {Promise<Object>} - Le resultat des envois
  */
 export const envoyerRappelsCRA = async (salaries, entreprise, options = { email: true, sms: false }) => {
-  console.log(`\n🔔 Début de l'envoi des rappels CRA pour ${salaries.length} salarié(s)...\n`);
+  console.log(`\nDebut de l'envoi des rappels CRA pour ${salaries.length} salarie(s)...\n`);
 
   const resultats = {
     emailsEnvoyes: 0,
@@ -301,7 +232,6 @@ export const envoyerRappelsCRA = async (salaries, entreprise, options = { email:
       sms: null,
     };
 
-    // Envoyer l'email si activé
     if (options.email && salarie.email) {
       const resultatEmail = await envoyerRappelCRAEmail(salarie, entreprise);
       resultatSalarie.email = resultatEmail;
@@ -313,7 +243,6 @@ export const envoyerRappelsCRA = async (salaries, entreprise, options = { email:
       }
     }
 
-    // Envoyer le SMS si activé
     if (options.sms && salarie.telephone) {
       const resultatSMS = await envoyerRappelCRASMS(salarie);
       resultatSalarie.sms = resultatSMS;
@@ -327,13 +256,12 @@ export const envoyerRappelsCRA = async (salaries, entreprise, options = { email:
 
     resultats.details.push(resultatSalarie);
 
-    // Attendre un peu entre chaque envoi pour ne pas surcharger le serveur SMTP
     await new Promise(resolve => setTimeout(resolve, cronConfig.emailSendDelayMs));
   }
 
-  console.log(`\n✨ Rappels CRA terminés :`);
-  console.log(`   📧 Emails : ${resultats.emailsEnvoyes} envoyé(s), ${resultats.emailsEchoues} échoué(s)`);
-  console.log(`   📱 SMS : ${resultats.smsEnvoyes} envoyé(s), ${resultats.smsEchoues} échoué(s)\n`);
+  console.log(`\nRappels CRA termines :`);
+  console.log(`   Emails : ${resultats.emailsEnvoyes} envoye(s), ${resultats.emailsEchoues} echoue(s)`);
+  console.log(`   SMS : ${resultats.smsEnvoyes} envoye(s), ${resultats.smsEchoues} echoue(s)\n`);
 
   return resultats;
 };

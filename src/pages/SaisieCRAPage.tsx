@@ -23,7 +23,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import 'dayjs/locale/fr';
-import { API_BASE_URL } from '../config';
+import { craApi } from '../services/apiClient';
 
 dayjs.locale('fr');
 
@@ -58,10 +58,9 @@ const SaisieCRAPage: React.FC = () => {
   const validateToken = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/cra-token/${token}`);
-      const data = await response.json();
+      const data = await craApi.validateToken(token!);
 
-      if (response.ok && data.valide) {
+      if (data.valide) {
         setTokenData(data);
       } else {
         setTokenData({ valide: false, raison: data.raison || 'Token invalide' });
@@ -82,28 +81,17 @@ const SaisieCRAPage: React.FC = () => {
       setSubmitting(true);
       setError(null);
 
-      const response = await fetch(`${API_BASE_URL}/cra-saisie`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          token,
-          joursTravailles: values.joursTravailles,
-        }),
-      });
+      const data = await craApi.submitCRA(token!, values.joursTravailles);
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
+      if (data.success) {
         setSubmitted(true);
         form.resetFields();
       } else {
-        setError(data.error || 'Erreur lors de la soumission');
+        setError('Erreur lors de la soumission');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erreur lors de la soumission:', err);
-      setError('Erreur de connexion au serveur');
+      setError(err.message || 'Erreur de connexion au serveur');
     } finally {
       setSubmitting(false);
     }
